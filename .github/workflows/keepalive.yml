@@ -9,9 +9,44 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping Supabase
+      - name: Ping EduSolve
         run: |
-          curl -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/" \
-            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}"
-          echo "Supabase pinged successfully!"
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X GET "${{ secrets.SUPABASE_URL_EDUSOLVE }}/rest/v1/" \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY_EDUSOLVE }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY_EDUSOLVE }}")
+          if [ "$RESPONSE" -ge 200 ] && [ "$RESPONSE" -lt 500 ]; then
+            echo "EDUSOLVE_STATUS=✅ ACTIVE" >> $GITHUB_ENV
+            echo "ACTIVE_COUNT=1" >> $GITHUB_ENV
+            echo "FAILED_COUNT=0" >> $GITHUB_ENV
+          else
+            echo "EDUSOLVE_STATUS=❌ FAILED" >> $GITHUB_ENV
+            echo "ACTIVE_COUNT=0" >> $GITHUB_ENV
+            echo "FAILED_COUNT=1" >> $GITHUB_ENV
+          fi
+
+      - name: Send Telegram Notification
+        run: |
+          TOTAL=1
+          ACTIVE=${{ env.ACTIVE_COUNT }}
+          FAILED=${{ env.FAILED_COUNT }}
+          RATE=$(( ACTIVE * 100 / TOTAL ))
+
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d parse_mode="HTML" \
+            --data-urlencode text="🚀 <b>SUPABASE MONITOR</b>
+
+🗓 $(date '+%B %d, %Y')  |  $(date '+%H:%M UTC')
+
+📦 <b>PROJECT STATUS</b>
+
+📌 EduSolve          ${{ env.EDUSOLVE_STATUS }}
+
+📊 <b>SUMMARY</b>
+
+✅ Total Active   :  $ACTIVE
+❌ Total Failed   :  $FAILED
+📈 Success Rate   :  $RATE%
+
+🔁 Next Ping : 5 days later
+⚡ Powered by GitHub Actions"
