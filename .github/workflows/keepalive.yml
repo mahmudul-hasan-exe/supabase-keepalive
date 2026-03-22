@@ -9,7 +9,7 @@ jobs:
     steps:
       - name: Ping EduSolve
         run: |
-          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X GET "${{ secrets.SUPABASE_URL_EDUSOLVE }}/rest/v1/" -H "apikey: ${{ secrets.SUPABASE_ANON_KEY_EDUSOLVE }}" -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY_EDUSOLVE }}")
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/" -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}")
           if [ "$RESPONSE" -ge 200 ] && [ "$RESPONSE" -lt 500 ]; then
             echo "EDUSOLVE_STATUS=✅ ACTIVE" >> $GITHUB_ENV
             echo "ACTIVE_COUNT=1" >> $GITHUB_ENV
